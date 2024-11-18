@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>नज़र उतारें</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+    #image-container { position: relative; display: inline-block; margin-top: 20px; }
+    img { max-width: 300px; border: 1px solid #ddd; }
+    .icon { width: 50px; cursor: grab; }
+    .draggable { position: absolute; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>नज़र उतारें</h1>
+  <p>Upload a photo and drag salt or tea over it to complete the ritual.</p>
+  <input type="file" id="upload" accept="image/*">
+  <div id="image-container"></div>
+  <p id="output"></p>
+
+  <script>
+    let draggedElement;
+
+    document.getElementById('upload').addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          // Show the uploaded image and draggable icons
+          document.getElementById('image-container').innerHTML = `
+            <img src="${e.target.result}" id="uploaded-image">
+            <img src="https://via.placeholder.com/50x50.png?text=Salt" id="salt" class="icon draggable" draggable="true" style="top: 20px; left: 20px;">
+            <img src="https://via.placeholder.com/50x50.png?text=Tea" id="tea" class="icon draggable" draggable="true" style="top: 20px; left: 80px;">
+          `;
+
+          addDragAndDrop();
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    function addDragAndDrop() {
+      const draggables = document.querySelectorAll('.draggable');
+      const container = document.getElementById('image-container');
+
+      draggables.forEach((item) => {
+        // Start dragging
+        item.addEventListener('dragstart', (e) => {
+          draggedElement = e.target;
+        });
+      });
+
+      // Drag over container
+      container.addEventListener('dragover', (e) => {
+        e.preventDefault(); // Necessary to allow dropping
+      });
+
+      // Drop on container
+      container.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const x = e.clientX - container.offsetLeft;
+        const y = e.clientY - container.offsetTop;
+
+        // Move dragged element to the dropped location
+        draggedElement.style.left = `${x - draggedElement.offsetWidth / 2}px`;
+        draggedElement.style.top = `${y - draggedElement.offsetHeight / 2}px`;
+
+        checkCompletion();
+      });
+    }
+
+    function checkCompletion() {
+      const salt = document.getElementById('salt');
+      const tea = document.getElementById('tea');
+      const uploadedImage = document.getElementById('uploaded-image');
+
+      if (
+        salt &&
+        tea &&
+        uploadedImage &&
+        salt.getBoundingClientRect().top < uploadedImage.getBoundingClientRect().bottom &&
+        tea.getBoundingClientRect().top < uploadedImage.getBoundingClientRect().bottom
+      ) {
+        document.getElementById('output').textContent = "नज़र उतार दी गई!";
+      }
+    }
+  </script>
+</body>
+</html>
