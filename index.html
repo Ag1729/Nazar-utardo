@@ -8,32 +8,57 @@
     body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
     #image-container { position: relative; display: inline-block; margin-top: 20px; }
     img { max-width: 300px; border: 1px solid #ddd; }
-    .icon { width: 50px; cursor: grab; }
-    .draggable { position: absolute; cursor: pointer; }
+    .icon { width: 50px; cursor: grab; margin: 2px; }
+    .group { position: absolute; top: 20px; left: 20px; cursor: grab; }
+    #drop-zone {
+      border: 2px dashed #aaa;
+      width: 300px;
+      height: 100px;
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #aaa;
+    }
+    #throw-button {
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
   <h1>नज़र उतारें</h1>
-  <p>Upload a photo and drag salt or tea over it to complete the ritual.</p>
+  <p>Upload a photo and move the group of items to complete the ritual.</p>
   <input type="file" id="upload" accept="image/*">
-  <div id="image-container"></div>
+  
+  <!-- Image container -->
+  <div id="image-container">
+    <div id="drop-zone">Drop here after 5 turns</div>
+    <button id="throw-button" disabled>Throw</button>
+  </div>
+
   <p id="output"></p>
 
   <script>
     let draggedElement;
+    let dragTurns = 0; // Keep track of drag turns
 
     document.getElementById('upload').addEventListener('change', (event) => {
       const file = event.target.files[0];
       if (file) {
         const reader = new FileReader();
         reader.onload = function (e) {
-          // Show the uploaded image and draggable icons
           document.getElementById('image-container').innerHTML = `
             <img src="${e.target.result}" id="uploaded-image">
-            <img src="https://via.placeholder.com/50x50.png?text=Salt" id="salt" class="icon draggable" draggable="true" style="top: 20px; left: 20px;">
-            <img src="https://via.placeholder.com/50x50.png?text=Tea" id="tea" class="icon draggable" draggable="true" style="top: 20px; left: 80px;">
+            <div id="group" class="group" draggable="true">
+              <img src="rai.png" alt="Rai" class="icon">
+              <img src="salt.png" alt="Salt" class="icon">
+              <img src="cloves.png" alt="Cloves" class="icon">
+              <img src="neem.png" alt="Neem" class="icon">
+              <img src="red-chillies.png" alt="Red Chillies" class="icon">
+            </div>
+            <div id="drop-zone">Drop here after 5 turns</div>
+            <button id="throw-button" disabled>Throw</button>
           `;
-
           addDragAndDrop();
         };
         reader.readAsDataURL(file);
@@ -41,49 +66,55 @@
     });
 
     function addDragAndDrop() {
-      const draggables = document.querySelectorAll('.draggable');
+      const group = document.getElementById('group');
       const container = document.getElementById('image-container');
+      const dropZone = document.getElementById('drop-zone');
+      const throwButton = document.getElementById('throw-button');
 
-      draggables.forEach((item) => {
-        // Start dragging
-        item.addEventListener('dragstart', (e) => {
-          draggedElement = e.target;
-        });
+      group.addEventListener('dragstart', (e) => {
+        draggedElement = group;
       });
 
-      // Drag over container
       container.addEventListener('dragover', (e) => {
-        e.preventDefault(); // Necessary to allow dropping
+        e.preventDefault(); // Allows items to be dropped
       });
 
-      // Drop on container
       container.addEventListener('drop', (e) => {
         e.preventDefault();
         const x = e.clientX - container.offsetLeft;
         const y = e.clientY - container.offsetTop;
 
-        // Move dragged element to the dropped location
+        // Move the group to the dropped location
         draggedElement.style.left = `${x - draggedElement.offsetWidth / 2}px`;
         draggedElement.style.top = `${y - draggedElement.offsetHeight / 2}px`;
 
-        checkCompletion();
+        // Increment drag turns and enable drop zone after 5 turns
+        dragTurns++;
+        if (dragTurns >= 5) {
+          dropZone.style.color = "#000";
+          dropZone.textContent = "Drop here to throw!";
+          throwButton.disabled = false; // Enable the throw button
+        }
       });
-    }
 
-    function checkCompletion() {
-      const salt = document.getElementById('salt');
-      const tea = document.getElementById('tea');
-      const uploadedImage = document.getElementById('uploaded-image');
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault(); // Allows items to be dropped onto the drop zone
+      });
 
-      if (
-        salt &&
-        tea &&
-        uploadedImage &&
-        salt.getBoundingClientRect().top < uploadedImage.getBoundingClientRect().bottom &&
-        tea.getBoundingClientRect().top < uploadedImage.getBoundingClientRect().bottom
-      ) {
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.backgroundColor = "#ffebcd"; // Highlight the drop zone
+      });
+
+      throwButton.addEventListener('click', () => {
+        // Reset the app after the throw button is clicked
         document.getElementById('output').textContent = "नज़र उतार दी गई!";
-      }
+        dragTurns = 0; // Reset drag turns
+        dropZone.style.color = "#aaa";
+        dropZone.style.backgroundColor = "";
+        dropZone.textContent = "Drop here after 5 turns";
+        throwButton.disabled = true; // Disable the throw button
+      });
     }
   </script>
 </body>
